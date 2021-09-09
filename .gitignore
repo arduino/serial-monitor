@@ -1,0 +1,13 @@
+# Build artifacts
+serial-discovery
+serial-discovery.exe
+__pycache__/
+
+# IDEs
+.idea/
+.vscode/
+*.bak
+*.code-workspace
+*.sublime-workspace
+
+/dist
