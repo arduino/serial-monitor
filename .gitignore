@@ -1,6 +1,6 @@
 # Build artifacts
-serial-discovery
-serial-discovery.exe
+serial-monitor
+serial-monitor.exe
 __pycache__/
 
 # IDEs

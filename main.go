@@ -1,5 +1,5 @@
 //
-// This file is part of serial-discovery.
+// This file is part of serial-monitor.
 //
 // Copyright 2018-2021 ARDUINO SA (http://www.arduino.cc/)
 //
@@ -22,9 +22,9 @@ import (
 	"os"
 
 	discovery "github.com/arduino/pluggable-discovery-protocol-handler/v2"
-	"github.com/arduino/serial-discovery/args"
-	"github.com/arduino/serial-discovery/sync"
-	"github.com/arduino/serial-discovery/version"
+	"github.com/arduino/serial-monitor/args"
+	"github.com/arduino/serial-monitor/sync"
+	"github.com/arduino/serial-monitor/version"
 )
 
 func main() {

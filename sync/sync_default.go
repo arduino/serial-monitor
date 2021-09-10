@@ -1,5 +1,5 @@
 //
-// This file is part of serial-discovery.
+// This file is part of serial-monitor.
 //
 // Copyright 2018 ARDUINO SA (http://www.arduino.cc/)
 //
@@ -15,6 +15,7 @@
 // a commercial license, send an email to license@arduino.cc.
 //
 
+//go:build !linux && !windows && !darwin
 // +build !linux,!windows,!darwin
 
 package sync

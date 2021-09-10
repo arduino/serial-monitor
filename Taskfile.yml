@@ -6,7 +6,7 @@ includes:
 vars:
   DEFAULT_GO_PACKAGES:
     sh: echo $(go list ./... | tr '\n' ' ')
-  PROJECT_NAME: "serial-discovery"
+  PROJECT_NAME: "serial-monitor"
   DIST_DIR: "dist"
   # build vars
   COMMIT:
@@ -18,7 +18,7 @@ vars:
   TIMESTAMP_SHORT:
     sh: echo "{{now | date "20060102"}}"
   VERSION: "{{if .NIGHTLY}}nightly-{{.TIMESTAMP_SHORT}}{{else if .TAG}}{{.TAG}}{{else}}{{.PACKAGE_NAME_PREFIX}}git-snapshot{{end}}"
-  CONFIGURATION_PACKAGE: github.com/arduino/serial-discovery/version
+  CONFIGURATION_PACKAGE: github.com/arduino/serial-monitor/version
   LDFLAGS: >
     -ldflags
     '

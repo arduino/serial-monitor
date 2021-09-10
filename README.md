@@ -1,10 +1,10 @@
-# Arduino pluggable discovery for serial ports
+# Arduino pluggable monitor for serial ports
 
-The `serial-discovery` tool is a command line program that interacts via stdio. It accepts commands as plain ASCII strings terminated with LF `\n` and sends response as JSON.
+The `serial-monitor` tool is a command line program that interacts via stdio. It accepts commands as plain ASCII strings terminated with LF `\n` and sends response as JSON.
 
 ## How to build
 
-Install a recent go environment (>=13.0) and run `go build`. The executable `serial-discovery` will be produced in your working directory.
+Install a recent go environment (>=13.0) and run `go build`. The executable `serial-monitor` will be produced in your working directory.
 
 ## Usage
 
@@ -12,7 +12,7 @@ After startup, the tool waits for commands. The available commands are: `HELLO`,
 
 #### HELLO command
 
-The `HELLO` command is used to establish the pluggable discovery protocol between client and discovery.
+The `HELLO` command is used to establish the pluggable monitor protocol between client and monitor.
 The format of the command is:
 
 `HELLO <PROTOCOL_VERSION> "<USER_AGENT>"`
@@ -36,7 +36,7 @@ The response to the command is:
 }
 ```
 
-`protocolVersion` is the protocol version that the discovery is going to use in the remainder of the communication.
+`protocolVersion` is the protocol version that the monitor is going to use in the remainder of the communication.
 
 #### START command
 
@@ -62,7 +62,7 @@ The `STOP` command stops the discovery internal subroutines and free some resour
 
 #### QUIT command
 
-The `QUIT` command terminates the discovery. The response to quit is:
+The `QUIT` command terminates the monitor. The response to quit is:
 
 ```json
 {
@@ -151,10 +151,10 @@ in this case only the `address` and `protocol` fields are reported.
 
 ### Example of usage
 
-A possible transcript of the discovery usage:
+A possible transcript of the monitor usage:
 
 ```
-$ ./serial-discovery
+$ ./serial-monitor
 START
 {
   "eventType": "start",
@@ -228,7 +228,7 @@ $
 ## Security
 
 If you think you found a vulnerability or other security-related bug in this project, please read our
-[security policy](https://github.com/arduino/serial-discovery/security/policy) and report the bug to our Security Team 🛡️
+[security policy](https://github.com/arduino/serial-monitor/security/policy) and report the bug to our Security Team 🛡️
 Thank you!
 
 e-mail contact: security@arduino.cc
@@ -238,7 +238,7 @@ e-mail contact: security@arduino.cc
 Copyright (c) 2018 ARDUINO SA (www.arduino.cc)
 
 The software is released under the GNU General Public License, which covers the main body
-of the serial-discovery code. The terms of this license can be found at:
+of the serial-monitor code. The terms of this license can be found at:
 https://www.gnu.org/licenses/gpl-3.0.en.html
 
-See [LICENSE.txt](https://github.com/arduino/serial-discovery/blob/master/LICENSE.txt) for details.
+See [LICENSE.txt](https://github.com/arduino/serial-monitor/blob/master/LICENSE.txt) for details.

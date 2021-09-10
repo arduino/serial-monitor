@@ -3,11 +3,11 @@ name: Release
 
 env:
   # As defined by the Taskfile's PROJECT_NAME variable
-  PROJECT_NAME: serial-discovery
+  PROJECT_NAME: serial-monitor
   # As defined by the Taskfile's DIST_DIR variable
   DIST_DIR: dist
   # The project's folder on Arduino's download server for uploading builds
-  AWS_PLUGIN_TARGET: /discovery/serial-discovery/
+  AWS_PLUGIN_TARGET: /monitor/serial-monitor/
   ARTIFACT_NAME: dist
 
 on:

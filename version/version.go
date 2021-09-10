@@ -1,5 +1,5 @@
 //
-// This file is part of serial-discovery.
+// This file is part of serial-monitor.
 //
 // Copyright 2021 ARDUINO SA (http://www.arduino.cc/)
 //
