@@ -18,14 +18,49 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strconv"
 
-	discovery "github.com/arduino/pluggable-discovery-protocol-handler/v2"
+	monitor "github.com/arduino/pluggable-monitor-protocol-handler"
 	"github.com/arduino/serial-monitor/args"
-	"github.com/arduino/serial-monitor/sync"
 	"github.com/arduino/serial-monitor/version"
+	"go.bug.st/serial"
 )
+
+var serialSettings = &monitor.PortDescriptor{
+	Protocol: "serial",
+	ConfigurationParameter: map[string]*monitor.PortParameterDescriptor{
+		"baudrate": {
+			Label:    "Baudrate",
+			Type:     "enum",
+			Values:   []string{"300", "600", "750", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "500000", "921600", "1000000", "2000000"},
+			Selected: "9600",
+		},
+		"parity": {
+			Label:    "Parity",
+			Type:     "enum",
+			Values:   []string{"N", "E", "O", "M", "S"},
+			Selected: "N",
+		},
+		"bits": {
+			Label:    "Data bits",
+			Type:     "enum",
+			Values:   []string{"5", "6", "7", "8", "9"},
+			Selected: "8",
+		},
+		"stop_bits": {
+			Label:    "Stop bits",
+			Type:     "enum",
+			Values:   []string{"1", "1.5", "2"},
+			Selected: "1",
+		},
+	},
+}
+
+var openedPort serial.Port
 
 func main() {
 	args.Parse()
@@ -34,44 +69,90 @@ func main() {
 		return
 	}
 
-	serialDisc := &SerialDiscovery{}
-	disc := discovery.NewServer(serialDisc)
-	if err := disc.Run(os.Stdin, os.Stdout); err != nil {
+	serialMonitor := &SerialMonitor{}
+	monitorServer := monitor.NewServer(serialMonitor)
+	if err := monitorServer.Run(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 }
 
-// SerialDiscovery is the implementation of the serial ports pluggable-discovery
-type SerialDiscovery struct {
-	closeChan chan<- bool
+// SerialMonitor is the implementation of the serial ports pluggable-monitor
+type SerialMonitor struct {
+	closeChan chan<- bool //TODO maybe useless
 }
 
-// Hello is the handler for the pluggable-discovery HELLO command
-func (d *SerialDiscovery) Hello(userAgent string, protocolVersion int) error {
+// Hello is the handler for the pluggable-monitor HELLO command
+func (d *SerialMonitor) Hello(userAgent string, protocol int) error {
 	return nil
 }
 
-// Quit is the handler for the pluggable-discovery QUIT command
-func (d *SerialDiscovery) Quit() {
+// Describe is the handler for the pluggable-monitor DESCRIBE command
+func (d *SerialMonitor) Describe() (*monitor.PortDescriptor, error) {
+	return serialSettings, nil
 }
 
-// Stop is the handler for the pluggable-discovery STOP command
-func (d *SerialDiscovery) Stop() error {
-	if d.closeChan != nil {
-		d.closeChan <- true
-		close(d.closeChan)
-		d.closeChan = nil
+// Configure is the handler for the pluggable-monitor CONFIGURE command
+func (d *SerialMonitor) Configure(parameterName string, value string) error {
+	if serialSettings.ConfigurationParameter[parameterName] == nil {
+		return fmt.Errorf("could not find parameter named %s", parameterName)
 	}
-	return nil
+	values := serialSettings.ConfigurationParameter[parameterName].Values
+	for _, i := range values {
+		if i == value {
+			serialSettings.ConfigurationParameter[parameterName].Selected = value
+			if openedPort != nil {
+				err := openedPort.SetMode(getMode())
+				if err != nil {
+					return errors.New(err.Error())
+
+				}
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
 }
 
-// StartSync is the handler for the pluggable-discovery START_SYNC command
-func (d *SerialDiscovery) StartSync(eventCB discovery.EventCallback, errorCB discovery.ErrorCallback) error {
-	close, err := sync.Start(eventCB, errorCB)
+// Open is the handler for the pluggable-monitor OPEN command
+func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
+	if openedPort != nil {
+		return nil, fmt.Errorf("port already opened: %s", boardPort)
+	}
+	openedPort, err := serial.Open(boardPort, getMode())
 	if err != nil {
-		return err
+		fmt.Print(boardPort)
+		openedPort = nil
+		return nil, errors.New(err.Error())
+
 	}
-	d.closeChan = close
+	return openedPort, nil
+}
+
+// Close is the handler for the pluggable-monitor CLOSE command
+func (d *SerialMonitor) Close() error {
+	if openedPort == nil {
+		return errors.New("port already closed")
+	}
+	openedPort.Close()
+	openedPort = nil
 	return nil
+}
+
+// Quit is the handler for the pluggable-monitor QUIT command
+func (d *SerialMonitor) Quit() {}
+
+func getMode() *serial.Mode {
+	baud, _ := strconv.Atoi(serialSettings.ConfigurationParameter["baudrate"].Selected)
+	parity, _ := strconv.Atoi(serialSettings.ConfigurationParameter["parity"].Selected)
+	dataBits, _ := strconv.Atoi(serialSettings.ConfigurationParameter["bits"].Selected)
+	stopBits, _ := strconv.Atoi(serialSettings.ConfigurationParameter["stop_bits"].Selected)
+
+	mode := &serial.Mode{
+		BaudRate: baud,
+		Parity:   serial.Parity(parity),
+		DataBits: dataBits,
+		StopBits: serial.StopBits(stopBits),
+	}
+	return mode
 }
