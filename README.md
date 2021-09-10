@@ -8,7 +8,7 @@ Install a recent go environment (>=13.0) and run `go build`. The executable `ser
 
 ## Usage
 
-After startup, the tool waits for commands. The available commands are: `HELLO`, `START`, `STOP`, `QUIT`, `LIST` and `START_SYNC`.
+After startup, the tool waits for commands. The available commands are: HELLO, DESCRIBE, CONFIGURE, OPEN, CLOSE and QUIT.
 
 #### HELLO command
 
@@ -38,192 +38,292 @@ The response to the command is:
 
 `protocolVersion` is the protocol version that the monitor is going to use in the remainder of the communication.
 
-#### START command
+#### DESCRIBE command
 
-The `START` starts the internal subroutines of the discovery that looks for ports. This command must be called before `LIST` or `START_SYNC`. The response to the start command is:
+The `DESCRIBE` command returns a description of the communication port. The description will have metadata about the port configuration, and which parameters are available:
 
 ```json
 {
-  "eventType": "start",
-  "message": "OK"
+  "event": "describe",
+  "message": "ok",
+  "port_description": {
+    "protocol": "serial",
+    "configuration_parameters": {
+      "baudrate": {
+        "label": "Baudrate",
+        "type": "enum",
+        "values": [
+          "300",
+          "600",
+          "750",
+          "1200",
+          "2400",
+          "4800",
+          "9600",
+          "19200",
+          "38400",
+          "57600",
+          "115200",
+          "230400",
+          "460800",
+          "500000",
+          "921600",
+          "1000000",
+          "2000000"
+        ],
+        "selected": "9600"
+      },
+      "parity": {
+        "label": "Parity",
+        "type": "enum",
+        "values": ["N", "E", "O", "M", "S"],
+        "selected": "N"
+      },
+      "bits": {
+        "label": "Data bits",
+        "type": "enum",
+        "values": ["5", "6", "7", "8", "9"],
+        "selected": "8"
+      },
+      "stop_bits": {
+        "label": "Stop bits",
+        "type": "enum",
+        "values": ["1", "1.5", "2"],
+        "selected": "1"
+      }
+    }
+  }
 }
 ```
 
-#### STOP command
+Each parameter has a unique name (`baudrate`, `parity`, etc...), a `type` (in this case only enum but more types will be added in the future), and the `selected` value for each parameter.
 
-The `STOP` command stops the discovery internal subroutines and free some resources. This command should be called if the client wants to pause the discovery for a while. The response to the stop command is:
+The parameter name can not contain spaces, and the allowed characters in the name are alphanumerics, underscore `_`, dot `.`, and dash `-`.
 
-```json
+The `enum` types must have a list of possible `values`.
+
+The client/IDE may expose these configuration values to the user via a config file or a GUI, in this case the `label` field may be used for a user readable description of the parameter.
+
+#### CONFIGURE command
+
+The `CONFIGURE` command sets configuration parameters for the communication port. The parameters can be changed one at a time and the syntax is:
+
+`CONFIGURE <PARAMETER_NAME> <VALUE>`
+
+The response to the command is:
+
+```JSON
 {
-  "eventType": "stop",
-  "message": "OK"
+  "event": "configure",
+  "message": "ok",
+}
+```
+
+or if there is an error:
+
+```JSON
+{
+  "event": "configure",
+  "error": true,
+  "message": "invalid value for parameter baudrate: 123456"
+}
+```
+
+The currently selected parameters may be obtained using the `DESCRIBE` command.
+
+#### OPEN command
+
+The `OPEN` command opens a communication with the board, the data exchanged with the board will be transferred to the Client/IDE via TCP/IP.
+
+The Client/IDE must first TCP-Listen to a randomly selected port and send it to the monitor tool as part of the OPEN command. The syntax of the OPEN command is:
+
+`OPEN <CLIENT_IP_ADDRESS> <BOARD_PORT>`
+
+For example, let's suppose that the Client/IDE wants to communicate with the serial port `/dev/ttyACM0` then the sequence of actions to perform will be the following:
+
+1. the Client/IDE must first listen to a random TCP port (let's suppose it chose `32123`)
+1. the Client/IDE sends the command `OPEN 127.0.0.1:32123 /dev/ttyACM0` to the monitor tool
+1. the monitor tool opens `/dev/ttyACM0`
+1. the monitor tool connects via TCP/IP to `127.0.0.1:32123` and start streaming data back and forth
+
+The answer to the `OPEN` command is:
+
+```JSON
+{
+  "event": "open",
+  "message": "ok"
+}
+```
+
+If the monitor tool cannot communicate with the board, or if the tool can not connect back to the TCP port, or if any other error condition happens:
+
+```JSON
+{
+  "event": "open",
+  "error": true,
+  "message": "unknown port /dev/ttyACM23"
+}
+```
+
+The board port will be opened using the parameters previously set through the `CONFIGURE` command.
+
+Once the port is opened, it may be unexpectedly closed at any time due to hardware failure, or because the Client/IDE closes the TCP/IP connection. In this case an asynchronous `port_closed` message must be generated from the monitor tool:
+
+```JSON
+{
+  "event": "port_closed",
+  "message": "serial port disappeared!"
+}
+```
+
+or
+
+```JSON
+{
+  "event": "port_closed",
+  "message": "lost TCP/IP connection with the client!"
+}
+```
+
+#### CLOSE command
+
+The `CLOSE` command will close the currently opened port and close the TCP/IP connection used to communicate with the Client/IDE. The answer to the command is:
+
+```JSON
+{
+  "event": "close",
+  "message": "ok"
+}
+```
+
+or in case of error
+
+```JSON
+{
+  "event": "close",
+  "error": true,
+  "message": "port already closed"
 }
 ```
 
 #### QUIT command
 
-The `QUIT` command terminates the monitor. The response to quit is:
+The `QUIT` command terminates the monitor. The response to `QUIT` is:
 
-```json
+```JSON
 {
   "eventType": "quit",
   "message": "OK"
 }
 ```
 
-after this output the tool quits.
+after this output the monitor exits. This command is supposed to always succeed.
 
-#### LIST command
+#### Invalid commands
 
-The `LIST` command returns a list of the currently available serial ports. The format of the response is the following:
+If the client sends an invalid or malformed command, the monitor should answer with:
 
-```json
+```JSON
 {
-  "eventType": "list",
-  "ports": [
-    {
-      "address": "/dev/ttyACM0",
-      "label": "/dev/ttyACM0",
-      "properties": {
-        "pid": "0x804e",
-        "vid": "0x2341",
-        "serialNumber": "EBEABFD6514D32364E202020FF10181E"
-      },
-      "protocol": "serial",
-      "protocolLabel": "Serial Port (USB)"
-    }
-  ]
+  "eventType": "command_error",
+  "error": true,
+  "message": "Unknown command XXXX"
 }
 ```
-
-The `ports` field contains a list of the available serial ports. If the serial port comes from an USB serial converter the USB VID/PID and USB SERIAL NUMBER properties are also reported inside `properties`.
-
-The list command is a one-shot command, if you need continuous monitoring of ports you should use `START_SYNC` command.
-
-#### START_SYNC command
-
-The `START_SYNC` command puts the tool in "events" mode: the discovery will send `add` and `remove` events each time a new port is detected or removed respectively.
-The immediate response to the command is:
-
-```json
-{
-  "eventType": "start_sync",
-  "message": "OK"
-}
-```
-
-after that the discovery enters in "events" mode.
-
-The `add` events looks like the following:
-
-```json
-{
-  "eventType": "add",
-  "port": {
-    "address": "/dev/ttyACM0",
-    "label": "/dev/ttyACM0",
-    "properties": {
-      "pid": "0x804e",
-      "vid": "0x2341",
-      "serialNumber": "EBEABFD6514D32364E202020FF10181E"
-    },
-    "protocol": "serial",
-    "protocolLabel": "Serial Port (USB)"
-  }
-}
-```
-
-it basically gather the same information as the `list` event but for a single port. After calling `START_SYNC` a bunch of `add` events may be generated in sequence to report all the ports available at the moment of the start.
-
-The `remove` event looks like this:
-
-```json
-{
-  "eventType": "remove",
-  "port": {
-    "address": "/dev/ttyACM0",
-    "protocol": "serial"
-  }
-}
-```
-
-in this case only the `address` and `protocol` fields are reported.
 
 ### Example of usage
 
 A possible transcript of the monitor usage:
 
 ```
-$ ./serial-monitor
-START
+HELLO 1 "test"
 {
-  "eventType": "start",
-  "message": "OK"
+  "eventType": "hello",
+  "message": "OK",
+  "protocolVersion": 1
 }
-LIST
+DESCRIBE
 {
-  "eventType": "list",
-  "ports": [
-    {
-      "address": "/dev/ttyACM0",
-      "label": "/dev/ttyACM0",
-      "protocol": "serial",
-      "protocolLabel": "Serial Port (USB)",
-      "properties": {
-        "pid": "0x004e",
-        "serialNumber": "EBEABFD6514D32364E202020FF10181E",
-        "vid": "0x2341"
+  "eventType": "describe",
+  "message": "OK",
+  "port_description": {
+    "protocol": "test",
+    "configuration_parameters": {
+      "echo": {
+        "label": "echo",
+        "type": "enum",
+        "value": [
+          "on",
+          "off"
+        ],
+        "selected": "on"
+      },
+      "speed": {
+        "label": "Baudrate",
+        "type": "enum",
+        "value": [
+          "9600",
+          "19200",
+          "38400",
+          "57600",
+          "115200"
+        ],
+        "selected": "9600"
       }
     }
-  ]
+  }
 }
-START_SYNC
+CONFIGURE speed 19200
 {
-  "eventType": "start_sync",
+  "eventType": "configure",
   "message": "OK"
 }
-{                                  <--- this event has been immediately sent
-  "eventType": "add",
-  "port": {
-    "address": "/dev/ttyACM0",
-    "label": "/dev/ttyACM0",
-    "protocol": "serial",
-    "protocolLabel": "Serial Port (USB)",
-    "properties": {
-      "pid": "0x004e",
-      "serialNumber": "EBEABFD6514D32364E202020FF10181E",
-      "vid": "0x2341"
+DESCRIBE
+{
+  "eventType": "describe",
+  "message": "OK",
+  "port_description": {
+    "protocol": "test",
+    "configuration_parameters": {
+      "echo": {
+        "label": "echo",
+        "type": "enum",
+        "value": [
+          "on",
+          "off"
+        ],
+        "selected": "on"
+      },
+      "speed": {
+        "label": "Baudrate",
+        "type": "enum",
+        "value": [
+          "9600",
+          "19200",
+          "38400",
+          "57600",
+          "115200"
+        ],
+        "selected": "19200"
+      }
     }
   }
 }
-{                                  <--- the board has been disconnected here
-  "eventType": "remove",
-  "port": {
-    "address": "/dev/ttyACM0",
-    "protocol": "serial"
-  }
+OPEN 127.0.0.1:5678 "test"
+{
+  "eventType": "open",
+  "message": "OK"
 }
-{                                  <--- the board has been connected again
-  "eventType": "add",
-  "port": {
-    "address": "/dev/ttyACM0",
-    "label": "/dev/ttyACM0",
-    "protocol": "serial",
-    "protocolLabel": "Serial Port (USB)",
-    "properties": {
-      "pid": "0x004e",
-      "serialNumber": "EBEABFD6514D32364E202020FF10181E",
-      "vid": "0x2341"
-    }
-  }
+CLOSE
+{
+  "eventType": "close",
+  "message": "OK"
 }
 QUIT
-{
-  "eventType": "quit",
-  "message": "OK"
-}
 $
 ```
+
+On another terminal tab to test it you can run `nc -l -p 5678` before running the `OPEN 127.0.0.1:5678 "test"` command. After that you can write messages in that terminal tab and see them being echoed.
 
 ## Security
 
