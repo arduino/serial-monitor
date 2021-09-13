@@ -51,6 +51,7 @@ type SerialMonitor struct {
 	openedPort     bool
 }
 
+// NewSerialMonitor will initialize and return a SerialMonitor
 func NewSerialMonitor() *SerialMonitor {
 	return &SerialMonitor{
 		serialSettings: &monitor.PortDescriptor{
