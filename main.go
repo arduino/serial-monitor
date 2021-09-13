@@ -30,38 +30,6 @@ import (
 	"go.bug.st/serial"
 )
 
-var serialSettings = &monitor.PortDescriptor{
-	Protocol: "serial",
-	ConfigurationParameter: map[string]*monitor.PortParameterDescriptor{
-		"baudrate": {
-			Label:    "Baudrate",
-			Type:     "enum",
-			Values:   []string{"300", "600", "750", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "500000", "921600", "1000000", "2000000"},
-			Selected: "9600",
-		},
-		"parity": {
-			Label:    "Parity",
-			Type:     "enum",
-			Values:   []string{"N", "E", "O", "M", "S"},
-			Selected: "N",
-		},
-		"bits": {
-			Label:    "Data bits",
-			Type:     "enum",
-			Values:   []string{"5", "6", "7", "8", "9"},
-			Selected: "8",
-		},
-		"stop_bits": {
-			Label:    "Stop bits",
-			Type:     "enum",
-			Values:   []string{"1", "1.5", "2"},
-			Selected: "1",
-		},
-	},
-}
-
-var openedPort serial.Port
-
 func main() {
 	args.Parse()
 	if args.ShowVersion {
@@ -69,8 +37,7 @@ func main() {
 		return
 	}
 
-	serialMonitor := &SerialMonitor{}
-	monitorServer := monitor.NewServer(serialMonitor)
+	monitorServer := monitor.NewServer(NewSerialMonitor())
 	if err := monitorServer.Run(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
@@ -79,7 +46,44 @@ func main() {
 
 // SerialMonitor is the implementation of the serial ports pluggable-monitor
 type SerialMonitor struct {
-	closeChan chan<- bool //TODO maybe useless
+	serialPort     serial.Port
+	serialSettings *monitor.PortDescriptor
+	openedPort     bool
+}
+
+func NewSerialMonitor() *SerialMonitor {
+	return &SerialMonitor{
+		serialSettings: &monitor.PortDescriptor{
+			Protocol: "serial",
+			ConfigurationParameter: map[string]*monitor.PortParameterDescriptor{
+				"baudrate": {
+					Label:    "Baudrate",
+					Type:     "enum",
+					Values:   []string{"300", "600", "750", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "500000", "921600", "1000000", "2000000"},
+					Selected: "9600",
+				},
+				"parity": {
+					Label:    "Parity",
+					Type:     "enum",
+					Values:   []string{"N", "E", "O", "M", "S"},
+					Selected: "N",
+				},
+				"bits": {
+					Label:    "Data bits",
+					Type:     "enum",
+					Values:   []string{"5", "6", "7", "8", "9"},
+					Selected: "8",
+				},
+				"stop_bits": {
+					Label:    "Stop bits",
+					Type:     "enum",
+					Values:   []string{"1", "1.5", "2"},
+					Selected: "1",
+				},
+			},
+		},
+		openedPort: false,
+	}
 }
 
 // Hello is the handler for the pluggable-monitor HELLO command
@@ -89,24 +93,24 @@ func (d *SerialMonitor) Hello(userAgent string, protocol int) error {
 
 // Describe is the handler for the pluggable-monitor DESCRIBE command
 func (d *SerialMonitor) Describe() (*monitor.PortDescriptor, error) {
-	return serialSettings, nil
+	return d.serialSettings, nil
 }
 
 // Configure is the handler for the pluggable-monitor CONFIGURE command
 func (d *SerialMonitor) Configure(parameterName string, value string) error {
-	if serialSettings.ConfigurationParameter[parameterName] == nil {
+	if d.serialSettings.ConfigurationParameter[parameterName] == nil {
 		return fmt.Errorf("could not find parameter named %s", parameterName)
 	}
-	values := serialSettings.ConfigurationParameter[parameterName].Values
+	values := d.serialSettings.ConfigurationParameter[parameterName].Values
 	for _, i := range values {
 		if i == value {
-			if openedPort != nil {
-				err := openedPort.SetMode(getMode())
+			if d.openedPort {
+				err := d.serialPort.SetMode(d.getMode())
 				if err != nil {
 					return errors.New(err.Error())
 				}
 			}
-			serialSettings.ConfigurationParameter[parameterName].Selected = value
+			d.serialSettings.ConfigurationParameter[parameterName].Selected = value
 			return nil
 		}
 	}
@@ -115,35 +119,36 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 
 // Open is the handler for the pluggable-monitor OPEN command
 func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
-	if openedPort != nil {
+	if d.openedPort {
 		return nil, fmt.Errorf("port already opened: %s", boardPort)
 	}
-	openedPort, err := serial.Open(boardPort, getMode())
+	serialPort, err := serial.Open(boardPort, d.getMode())
 	if err != nil {
-		openedPort = nil
 		return nil, err
 
 	}
-	return openedPort, nil
+	d.openedPort = true
+	d.serialPort = serialPort
+	return d.serialPort, nil
 }
 
 // Close is the handler for the pluggable-monitor CLOSE command
 func (d *SerialMonitor) Close() error {
-	if openedPort == nil {
+	if !d.openedPort {
 		return errors.New("port already closed")
 	}
-	openedPort.Close()
-	openedPort = nil
+	d.serialPort.Close()
+	d.openedPort = false
 	return nil
 }
 
 // Quit is the handler for the pluggable-monitor QUIT command
 func (d *SerialMonitor) Quit() {}
 
-func getMode() *serial.Mode {
-	baud, _ := strconv.Atoi(serialSettings.ConfigurationParameter["baudrate"].Selected)
+func (d *SerialMonitor) getMode() *serial.Mode {
+	baud, _ := strconv.Atoi(d.serialSettings.ConfigurationParameter["baudrate"].Selected)
 	var parity serial.Parity
-	switch serialSettings.ConfigurationParameter["parity"].Selected {
+	switch d.serialSettings.ConfigurationParameter["parity"].Selected {
 	case "N":
 		parity = serial.NoParity
 	case "E":
@@ -155,9 +160,9 @@ func getMode() *serial.Mode {
 	case "S":
 		parity = serial.SpaceParity
 	}
-	dataBits, _ := strconv.Atoi(serialSettings.ConfigurationParameter["bits"].Selected)
+	dataBits, _ := strconv.Atoi(d.serialSettings.ConfigurationParameter["bits"].Selected)
 	var stopBits serial.StopBits
-	switch serialSettings.ConfigurationParameter["stop_bits"].Selected {
+	switch d.serialSettings.ConfigurationParameter["stop_bits"].Selected {
 	case "1":
 		stopBits = serial.OneStopBit
 	case "1.5":
