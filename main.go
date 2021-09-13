@@ -100,14 +100,13 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 	values := serialSettings.ConfigurationParameter[parameterName].Values
 	for _, i := range values {
 		if i == value {
-			serialSettings.ConfigurationParameter[parameterName].Selected = value
 			if openedPort != nil {
 				err := openedPort.SetMode(getMode())
 				if err != nil {
 					return errors.New(err.Error())
-
 				}
 			}
+			serialSettings.ConfigurationParameter[parameterName].Selected = value
 			return nil
 		}
 	}
@@ -121,9 +120,8 @@ func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
 	}
 	openedPort, err := serial.Open(boardPort, getMode())
 	if err != nil {
-		fmt.Print(boardPort)
 		openedPort = nil
-		return nil, errors.New(err.Error())
+		return nil, err
 
 	}
 	return openedPort, nil
