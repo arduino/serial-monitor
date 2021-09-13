@@ -144,15 +144,35 @@ func (d *SerialMonitor) Quit() {}
 
 func getMode() *serial.Mode {
 	baud, _ := strconv.Atoi(serialSettings.ConfigurationParameter["baudrate"].Selected)
-	parity, _ := strconv.Atoi(serialSettings.ConfigurationParameter["parity"].Selected)
+	var parity serial.Parity
+	switch serialSettings.ConfigurationParameter["parity"].Selected {
+	case "N":
+		parity = serial.NoParity
+	case "E":
+		parity = serial.EvenParity
+	case "O":
+		parity = serial.OddParity
+	case "M":
+		parity = serial.MarkParity
+	case "S":
+		parity = serial.SpaceParity
+	}
 	dataBits, _ := strconv.Atoi(serialSettings.ConfigurationParameter["bits"].Selected)
-	stopBits, _ := strconv.Atoi(serialSettings.ConfigurationParameter["stop_bits"].Selected)
+	var stopBits serial.StopBits
+	switch serialSettings.ConfigurationParameter["stop_bits"].Selected {
+	case "1":
+		stopBits = serial.OneStopBit
+	case "1.5":
+		stopBits = serial.OnePointFiveStopBits
+	case "2":
+		stopBits = serial.TwoStopBits
+	}
 
 	mode := &serial.Mode{
 		BaudRate: baud,
-		Parity:   serial.Parity(parity),
+		Parity:   parity,
 		DataBits: dataBits,
-		StopBits: serial.StopBits(stopBits),
+		StopBits: stopBits,
 	}
 	return mode
 }
