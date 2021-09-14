@@ -105,13 +105,15 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 	values := d.serialSettings.ConfigurationParameter[parameterName].Values
 	for _, i := range values {
 		if i == value {
+			oldValue := d.serialSettings.ConfigurationParameter[parameterName].Selected
+			d.serialSettings.ConfigurationParameter[parameterName].Selected = value
 			if d.openedPort {
 				err := d.serialPort.SetMode(d.getMode())
 				if err != nil {
+					d.serialSettings.ConfigurationParameter[parameterName].Selected = oldValue
 					return errors.New(err.Error())
 				}
 			}
-			d.serialSettings.ConfigurationParameter[parameterName].Selected = value
 			return nil
 		}
 	}
