@@ -341,4 +341,4 @@ The software is released under the GNU General Public License, which covers the 
 of the serial-monitor code. The terms of this license can be found at:
 https://www.gnu.org/licenses/gpl-3.0.en.html
 
-See [LICENSE.txt](https://github.com/arduino/serial-monitor/blob/master/LICENSE.txt) for details.
+See [LICENSE.txt](https://github.com/arduino/serial-monitor/blob/main/LICENSE.txt) for details.
