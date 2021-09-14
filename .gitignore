@@ -1,0 +1,13 @@
+# Build artifacts
+serial-monitor
+serial-monitor.exe
+__pycache__/
+
+# IDEs
+.idea/
+.vscode/
+*.bak
+*.code-workspace
+*.sublime-workspace
+
+/dist
