@@ -66,8 +66,8 @@ func NewSerialMonitor() *SerialMonitor {
 				"parity": {
 					Label:    "Parity",
 					Type:     "enum",
-					Values:   []string{"N", "E", "O", "M", "S"},
-					Selected: "N",
+					Values:   []string{"None", "Even", "Odd", "Mark", "Space"},
+					Selected: "None",
 				},
 				"bits": {
 					Label:    "Data bits",
@@ -152,15 +152,15 @@ func (d *SerialMonitor) getMode() *serial.Mode {
 	baud, _ := strconv.Atoi(d.serialSettings.ConfigurationParameter["baudrate"].Selected)
 	var parity serial.Parity
 	switch d.serialSettings.ConfigurationParameter["parity"].Selected {
-	case "N":
+	case "None":
 		parity = serial.NoParity
-	case "E":
+	case "Even":
 		parity = serial.EvenParity
-	case "O":
+	case "Odd":
 		parity = serial.OddParity
-	case "M":
+	case "Mark":
 		parity = serial.MarkParity
-	case "S":
+	case "Space":
 		parity = serial.SpaceParity
 	}
 	dataBits, _ := strconv.Atoi(d.serialSettings.ConfigurationParameter["bits"].Selected)

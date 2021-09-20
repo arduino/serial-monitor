@@ -76,8 +76,8 @@ The `DESCRIBE` command returns a description of the communication port. The desc
       "parity": {
         "label": "Parity",
         "type": "enum",
-        "values": ["N", "E", "O", "M", "S"],
-        "selected": "N"
+        "values": ["None", "Even", "Odd", "Mark", "Space"],
+        "selected": "None"
       },
       "bits": {
         "label": "Data bits",
