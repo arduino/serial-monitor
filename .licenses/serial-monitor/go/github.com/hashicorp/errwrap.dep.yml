@@ -1,6 +1,6 @@
 ---
 name: github.com/hashicorp/errwrap
-version: v1.0.0
+version: v1.1.0
 type: go
 summary: Package errwrap implements methods to formalize error wrapping in Go.
 homepage: https://pkg.go.dev/github.com/hashicorp/errwrap
