@@ -28,6 +28,7 @@ import (
 	"github.com/arduino/serial-monitor/args"
 	"github.com/arduino/serial-monitor/version"
 	"go.bug.st/serial"
+	"golang.org/x/exp/slices"
 )
 
 func main() {
@@ -103,21 +104,19 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 	if !ok {
 		return fmt.Errorf("could not find parameter named %s", parameterName)
 	}
-	for _, i := range parameter.Values {
-		if i == value {
-			oldValue := parameter.Selected
-			parameter.Selected = value
-			if d.openedPort {
-				err := d.serialPort.SetMode(d.getMode())
-				if err != nil {
-					parameter.Selected = oldValue
-					return errors.New(err.Error())
-				}
-			}
-			return nil
+	if !slices.Contains(parameter.Values, value) {
+		return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
+	}
+	oldValue := parameter.Selected
+	parameter.Selected = value
+	if d.openedPort {
+		err := d.serialPort.SetMode(d.getMode())
+		if err != nil {
+			parameter.Selected = oldValue
+			return errors.New(err.Error())
 		}
 	}
-	return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
+	return nil
 }
 
 // Open is the handler for the pluggable-monitor OPEN command
