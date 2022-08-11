@@ -82,6 +82,18 @@ func NewSerialMonitor() *SerialMonitor {
 					Values:   []string{"1", "1.5", "2"},
 					Selected: "1",
 				},
+				"rts": {
+					Label:    "RTS",
+					Type:     "enum",
+					Values:   []string{"On", "Off"},
+					Selected: "On",
+				},
+				"dtr": {
+					Label:    "DTR",
+					Type:     "enum",
+					Values:   []string{"On", "Off"},
+					Selected: "On",
+				},
 			},
 		},
 		openedPort: false,
@@ -114,7 +126,17 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 	// Apply configuration to port
 	var configErr error
 	if d.openedPort {
-		configErr = d.serialPort.SetMode(d.getMode())
+		switch parameterName {
+		case "baudrate", "parity", "bits", "stop_bits":
+			configErr = d.serialPort.SetMode(d.getMode())
+		case "dtr":
+			configErr = d.serialPort.SetDTR(d.getDTR())
+		case "rts":
+			configErr = d.serialPort.SetRTS(d.getRTS())
+		default:
+			// Should never happen
+			panic("Invalid parameter: " + parameterName)
+		}
 	}
 
 	// If configuration failed, rollback settings
@@ -133,7 +155,6 @@ func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
 	serialPort, err := serial.Open(boardPort, d.getMode())
 	if err != nil {
 		return nil, err
-
 	}
 	d.openedPort = true
 	d.serialPort = serialPort
@@ -184,6 +205,18 @@ func (d *SerialMonitor) getMode() *serial.Mode {
 		Parity:   parity,
 		DataBits: dataBits,
 		StopBits: stopBits,
+		InitialStatusBits: &serial.ModemOutputBits{
+			DTR: d.getDTR(),
+			RTS: d.getRTS(),
+		},
 	}
 	return mode
+}
+
+func (d *SerialMonitor) getDTR() bool {
+	return d.serialSettings.ConfigurationParameter["dtr"].Selected == "On"
+}
+
+func (d *SerialMonitor) getRTS() bool {
+	return d.serialSettings.ConfigurationParameter["rts"].Selected == "On"
 }
