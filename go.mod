@@ -1,6 +1,6 @@
 module github.com/arduino/serial-monitor
 
-go 1.17
+go 1.18
 
 require (
 	github.com/arduino/pluggable-monitor-protocol-handler v0.9.2
