@@ -107,14 +107,20 @@ func (d *SerialMonitor) Configure(parameterName string, value string) error {
 	if !slices.Contains(parameter.Values, value) {
 		return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
 	}
+	// Set configuration
 	oldValue := parameter.Selected
 	parameter.Selected = value
+
+	// Apply configuration to port
+	var configErr error
 	if d.openedPort {
-		err := d.serialPort.SetMode(d.getMode())
-		if err != nil {
-			parameter.Selected = oldValue
-			return errors.New(err.Error())
-		}
+		configErr = d.serialPort.SetMode(d.getMode())
+	}
+
+	// If configuration failed, rollback settings
+	if configErr != nil {
+		parameter.Selected = oldValue
+		return configErr
 	}
 	return nil
 }
