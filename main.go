@@ -99,18 +99,18 @@ func (d *SerialMonitor) Describe() (*monitor.PortDescriptor, error) {
 
 // Configure is the handler for the pluggable-monitor CONFIGURE command
 func (d *SerialMonitor) Configure(parameterName string, value string) error {
-	if d.serialSettings.ConfigurationParameter[parameterName] == nil {
+	parameter, ok := d.serialSettings.ConfigurationParameter[parameterName]
+	if !ok {
 		return fmt.Errorf("could not find parameter named %s", parameterName)
 	}
-	values := d.serialSettings.ConfigurationParameter[parameterName].Values
-	for _, i := range values {
+	for _, i := range parameter.Values {
 		if i == value {
-			oldValue := d.serialSettings.ConfigurationParameter[parameterName].Selected
-			d.serialSettings.ConfigurationParameter[parameterName].Selected = value
+			oldValue := parameter.Selected
+			parameter.Selected = value
 			if d.openedPort {
 				err := d.serialPort.SetMode(d.getMode())
 				if err != nil {
-					d.serialSettings.ConfigurationParameter[parameterName].Selected = oldValue
+					parameter.Selected = oldValue
 					return errors.New(err.Error())
 				}
 			}
