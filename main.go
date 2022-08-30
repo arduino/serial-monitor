@@ -67,8 +67,8 @@ func NewSerialMonitor() *SerialMonitor {
 				"parity": {
 					Label:    "Parity",
 					Type:     "enum",
-					Values:   []string{"None", "Even", "Odd", "Mark", "Space"},
-					Selected: "None",
+					Values:   []string{"none", "even", "odd", "mark", "space"},
+					Selected: "none",
 				},
 				"bits": {
 					Label:    "Data bits",
@@ -85,14 +85,14 @@ func NewSerialMonitor() *SerialMonitor {
 				"rts": {
 					Label:    "RTS",
 					Type:     "enum",
-					Values:   []string{"On", "Off"},
-					Selected: "On",
+					Values:   []string{"on", "off"},
+					Selected: "on",
 				},
 				"dtr": {
 					Label:    "DTR",
 					Type:     "enum",
-					Values:   []string{"On", "Off"},
-					Selected: "On",
+					Values:   []string{"on", "off"},
+					Selected: "on",
 				},
 			},
 		},
@@ -214,9 +214,9 @@ func (d *SerialMonitor) getMode() *serial.Mode {
 }
 
 func (d *SerialMonitor) getDTR() bool {
-	return d.serialSettings.ConfigurationParameter["dtr"].Selected == "On"
+	return d.serialSettings.ConfigurationParameter["dtr"].Selected == "on"
 }
 
 func (d *SerialMonitor) getRTS() bool {
-	return d.serialSettings.ConfigurationParameter["rts"].Selected == "On"
+	return d.serialSettings.ConfigurationParameter["rts"].Selected == "on"
 }
