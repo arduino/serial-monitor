@@ -10,11 +10,15 @@ on:
   push:
     paths:
       - ".github/workflows/check-taskfiles.ya?ml"
+      - "package.json"
+      - "package-lock.json"
       - "**/Taskfile.ya?ml"
       - "**/DistTasks.ya?ml"
   pull_request:
     paths:
       - ".github/workflows/check-taskfiles.ya?ml"
+      - "package.json"
+      - "package-lock.json"
       - "**/Taskfile.ya?ml"
       - "**/DistTasks.ya?ml"
   schedule:
@@ -55,18 +59,17 @@ jobs:
           location: ${{ runner.temp }}/taskfile-schema
 
       - name: Install JSON schema validator
-        run: |
-          sudo npm install \
-            --global \
-            ajv-cli \
-            ajv-formats
+        run: npm install
 
       - name: Validate ${{ matrix.file }}
         run: |
           # See: https://github.com/ajv-validator/ajv-cli#readme
-          ajv validate \
-            --all-errors \
-            --strict=false \
-            -c ajv-formats \
-            -s "${{ steps.download-schema.outputs.file-path }}" \
-            -d "${{ matrix.file }}"
+          npx \
+            --package=ajv-cli \
+            --package=ajv-formats \
+            ajv validate \
+              --all-errors \
+              --strict=false \
+              -c ajv-formats \
+              -s "${{ steps.download-schema.outputs.file-path }}" \
+              -d "${{ matrix.file }}"
