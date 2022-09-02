@@ -1,6 +1,12 @@
 # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/sync-labels.md
 name: Sync Labels
 
+env:
+  # See: https://github.com/actions/setup-node/#readme
+  NODE_VERSION: 16.x
+  CONFIGURATIONS_FOLDER: .github/label-configuration-files
+  CONFIGURATIONS_ARTIFACT: label-configuration-files
+
 # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows
 on:
   push:
@@ -17,10 +23,6 @@ on:
   workflow_dispatch:
   repository_dispatch:
 
-env:
-  CONFIGURATIONS_FOLDER: .github/label-configuration-files
-  CONFIGURATIONS_ARTIFACT: label-configuration-files
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -28,6 +30,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Download JSON schema for labels configuration file
         id: download-schema
@@ -117,6 +124,11 @@ jobs:
         uses: geekyeggo/delete-artifact@v1
         with:
           name: ${{ env.CONFIGURATIONS_ARTIFACT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Merge label configuration files
         run: |

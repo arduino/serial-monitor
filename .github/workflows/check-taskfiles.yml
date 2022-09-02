@@ -1,6 +1,10 @@
 # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/check-taskfiles.md
 name: Check Taskfiles
 
+env:
+  # See: https://github.com/actions/setup-node/#readme
+  NODE_VERSION: 16.x
+
 # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows
 on:
   push:
@@ -36,6 +40,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Download JSON schema for Taskfiles
         id: download-schema
