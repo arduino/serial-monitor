@@ -75,6 +75,8 @@ tasks:
   # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/assets/check-prettier-formatting-task/Taskfile.yml
   general:format-prettier:
     desc: Format all supported files with Prettier
+    deps:
+      - task: npm:install-deps
     cmds:
       - npx prettier --write .
 
@@ -98,12 +100,16 @@ tasks:
   # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/assets/check-markdown-task/Taskfile.yml
   markdown:lint:
     desc: Check for problems in Markdown files
+    deps:
+      - task: npm:install-deps
     cmds:
       - npx markdownlint-cli "**/*.md"
 
   # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/assets/check-markdown-task/Taskfile.yml
   markdown:fix:
     desc: Automatically correct linting violations in Markdown files where possible
+    deps:
+      - task: npm:install-deps
     cmds:
       - npx markdownlint-cli --fix "**/*.md"
 
@@ -112,6 +118,7 @@ tasks:
     desc: Check for broken links
     deps:
       - task: docs:generate
+      - task: npm:install-deps
     cmds:
       - |
         if [[ "{{.OS}}" == "Windows_NT" ]]; then
@@ -128,7 +135,14 @@ tasks:
           # Using -regex instead of -name to avoid Task's behavior of globbing even when quoted on Windows
           # The odd method for escaping . in the regex is required for windows compatibility because mvdan.cc/sh gives
           # \ characters special treatment on Windows in an attempt to support them as path separators.
-          for file in $(find . -regex ".*[.]md"); do
+          for file in $(
+            find . \
+              -type d -name '.git' -prune -o \
+              -type d -name '.licenses' -prune -o \
+              -type d -name '__pycache__' -prune -o \
+              -type d -name 'node_modules' -prune -o \
+              -regex ".*[.]md" -print
+          ); do
             markdown-link-check \
               --quiet \
               --config "./.markdown-link-check.json" \
@@ -139,7 +153,14 @@ tasks:
         else
           npx --package=markdown-link-check --call='
             STATUS=0
-            for file in $(find . -regex ".*[.]md"); do
+            for file in $(
+              find . \
+                -type d -name '.git' -prune -o \
+                -type d -name '.licenses' -prune -o \
+                -type d -name '__pycache__' -prune -o \
+                -type d -name 'node_modules' -prune -o \
+                -regex ".*[.]md" -print
+            ); do
               markdown-link-check \
                 --quiet \
                 --config "./.markdown-link-check.json" \
@@ -150,6 +171,12 @@ tasks:
           '
         fi
 
+  # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/assets/npm-task/Taskfile.yml
+  npm:install-deps:
+    desc: Install dependencies managed by npm
+    cmds:
+      - npm install
+
   # Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/assets/check-workflows-task/Taskfile.yml
   ci:validate:
     desc: Validate GitHub Actions workflows against their JSON schema
@@ -159,6 +186,8 @@ tasks:
       WORKFLOW_SCHEMA_PATH:
         sh: mktemp -t workflow-schema-XXXXXXXXXX.json
       WORKFLOWS_DATA_PATH: "./.github/workflows/*.{yml,yaml}"
+    deps:
+      - task: npm:install-deps
     cmds:
       - |
         wget \
