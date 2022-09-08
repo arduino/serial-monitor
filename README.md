@@ -4,7 +4,7 @@ The `serial-monitor` tool is a command line program that interacts via stdio. It
 
 ## How to build
 
-Install a recent go environment (>=13.0) and run `go build`. The executable `serial-monitor` will be produced in your working directory.
+Install a recent go environment and run `go build`. The executable `serial-monitor` will be produced in your working directory.
 
 ## Usage
 

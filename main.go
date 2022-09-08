@@ -28,6 +28,7 @@ import (
 	"github.com/arduino/serial-monitor/args"
 	"github.com/arduino/serial-monitor/version"
 	"go.bug.st/serial"
+	"golang.org/x/exp/slices"
 )
 
 func main() {
@@ -66,8 +67,8 @@ func NewSerialMonitor() *SerialMonitor {
 				"parity": {
 					Label:    "Parity",
 					Type:     "enum",
-					Values:   []string{"None", "Even", "Odd", "Mark", "Space"},
-					Selected: "None",
+					Values:   []string{"none", "even", "odd", "mark", "space"},
+					Selected: "none",
 				},
 				"bits": {
 					Label:    "Data bits",
@@ -80,6 +81,18 @@ func NewSerialMonitor() *SerialMonitor {
 					Type:     "enum",
 					Values:   []string{"1", "1.5", "2"},
 					Selected: "1",
+				},
+				"rts": {
+					Label:    "RTS",
+					Type:     "enum",
+					Values:   []string{"on", "off"},
+					Selected: "on",
+				},
+				"dtr": {
+					Label:    "DTR",
+					Type:     "enum",
+					Values:   []string{"on", "off"},
+					Selected: "on",
 				},
 			},
 		},
@@ -99,25 +112,39 @@ func (d *SerialMonitor) Describe() (*monitor.PortDescriptor, error) {
 
 // Configure is the handler for the pluggable-monitor CONFIGURE command
 func (d *SerialMonitor) Configure(parameterName string, value string) error {
-	if d.serialSettings.ConfigurationParameter[parameterName] == nil {
+	parameter, ok := d.serialSettings.ConfigurationParameter[parameterName]
+	if !ok {
 		return fmt.Errorf("could not find parameter named %s", parameterName)
 	}
-	values := d.serialSettings.ConfigurationParameter[parameterName].Values
-	for _, i := range values {
-		if i == value {
-			oldValue := d.serialSettings.ConfigurationParameter[parameterName].Selected
-			d.serialSettings.ConfigurationParameter[parameterName].Selected = value
-			if d.openedPort {
-				err := d.serialPort.SetMode(d.getMode())
-				if err != nil {
-					d.serialSettings.ConfigurationParameter[parameterName].Selected = oldValue
-					return errors.New(err.Error())
-				}
-			}
-			return nil
+	if !slices.Contains(parameter.Values, value) {
+		return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
+	}
+	// Set configuration
+	oldValue := parameter.Selected
+	parameter.Selected = value
+
+	// Apply configuration to port
+	var configErr error
+	if d.openedPort {
+		switch parameterName {
+		case "baudrate", "parity", "bits", "stop_bits":
+			configErr = d.serialPort.SetMode(d.getMode())
+		case "dtr":
+			configErr = d.serialPort.SetDTR(d.getDTR())
+		case "rts":
+			configErr = d.serialPort.SetRTS(d.getRTS())
+		default:
+			// Should never happen
+			panic("Invalid parameter: " + parameterName)
 		}
 	}
-	return fmt.Errorf("invalid value for parameter %s: %s", parameterName, value)
+
+	// If configuration failed, rollback settings
+	if configErr != nil {
+		parameter.Selected = oldValue
+		return configErr
+	}
+	return nil
 }
 
 // Open is the handler for the pluggable-monitor OPEN command
@@ -128,7 +155,6 @@ func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
 	serialPort, err := serial.Open(boardPort, d.getMode())
 	if err != nil {
 		return nil, err
-
 	}
 	d.openedPort = true
 	d.serialPort = serialPort
@@ -179,6 +205,18 @@ func (d *SerialMonitor) getMode() *serial.Mode {
 		Parity:   parity,
 		DataBits: dataBits,
 		StopBits: stopBits,
+		InitialStatusBits: &serial.ModemOutputBits{
+			DTR: d.getDTR(),
+			RTS: d.getRTS(),
+		},
 	}
 	return mode
+}
+
+func (d *SerialMonitor) getDTR() bool {
+	return d.serialSettings.ConfigurationParameter["dtr"].Selected == "on"
+}
+
+func (d *SerialMonitor) getRTS() bool {
+	return d.serialSettings.ConfigurationParameter["rts"].Selected == "on"
 }
