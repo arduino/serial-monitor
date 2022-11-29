@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/arduino/pluggable-monitor-protocol-handler v0.9.2
-	go.bug.st/serial v1.4.0
+	go.bug.st/serial v1.4.1
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
 )
 
