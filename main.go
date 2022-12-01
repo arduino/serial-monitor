@@ -59,9 +59,14 @@ func NewSerialMonitor() *SerialMonitor {
 			Protocol: "serial",
 			ConfigurationParameter: map[string]*monitor.PortParameterDescriptor{
 				"baudrate": {
-					Label:    "Baudrate",
-					Type:     "enum",
-					Values:   []string{"300", "600", "750", "1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400", "460800", "500000", "921600", "1000000", "2000000"},
+					Label: "Baudrate",
+					Type:  "enum",
+					Values: []string{
+						"300", "600", "750",
+						"1200", "2400", "4800", "9600",
+						"19200", "31250", "38400", "57600", "74880",
+						"115200", "230400", "250000", "460800", "500000", "921600",
+						"1000000", "2000000"},
 					Selected: "9600",
 				},
 				"parity": {
