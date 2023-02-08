@@ -161,11 +161,6 @@ func (d *SerialMonitor) Open(boardPort string) (io.ReadWriter, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Clean up residual data in IO buffers
-	_ = serialPort.ResetInputBuffer() // do not error if resetting buffers fails
-	_ = serialPort.ResetOutputBuffer()
-
 	d.openedPort = true
 	d.serialPort = serialPort
 	return d.serialPort, nil
