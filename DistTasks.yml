@@ -20,7 +20,6 @@ version: "3"
 vars:
   CONTAINER: "docker.elastic.co/beats-dev/golang-crossbuild"
   GO_VERSION: "1.21.6"
-  CHECKSUM_FILE: "{{.VERSION}}-checksums.txt"
 
 tasks:
   all:
@@ -50,7 +49,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         zip {{.PACKAGE_NAME}} {{.PLATFORM_DIR}}/{{.PROJECT_NAME}}.exe {{.PLATFORM_DIR}}/LICENSE.txt
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_windows_386"
@@ -74,7 +72,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         zip {{.PACKAGE_NAME}} {{.PLATFORM_DIR}}/{{.PROJECT_NAME}}.exe {{.PLATFORM_DIR}}/LICENSE.txt
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_windows_amd64"
@@ -98,7 +95,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_linux_amd32"
@@ -122,7 +118,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_linux_amd64"
@@ -146,7 +141,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_linux_arm_7"
@@ -170,7 +164,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_linux_arm_6"
@@ -226,7 +219,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_linux_arm_64"
@@ -251,7 +243,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_osx_darwin_amd64"
@@ -289,7 +280,6 @@ tasks:
         -p "{{.BUILD_PLATFORM}}"
 
         tar cz {{.PLATFORM_DIR}} -f {{.PACKAGE_NAME}}
-        sha256sum {{.PACKAGE_NAME}} >> {{.CHECKSUM_FILE}}
 
     vars:
       PLATFORM_DIR: "{{.PROJECT_NAME}}_osx_darwin_arm64"

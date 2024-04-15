@@ -1,11 +1,11 @@
-# Source: https://github.com/arduino/tooling-project-assets/blob/master/workflow-templates/check-workflows-task.md
+# Source: https://github.com/arduino/tooling-project-assets/blob/main/workflow-templates/check-workflows-task.md
 name: Check Workflows
 
 env:
   # See: https://github.com/actions/setup-node/#readme
   NODE_VERSION: 16.x
 
-# See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows
+# See: https://docs.github.com/actions/using-workflows/events-that-trigger-workflows
 on:
   push:
     paths:
@@ -28,6 +28,8 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
