@@ -15,6 +15,7 @@
 // a commercial license, send an email to license@arduino.cc.
 //
 
+// Package main implements the serial monitor
 package main
 
 import (
@@ -106,6 +107,7 @@ func NewSerialMonitor() *SerialMonitor {
 }
 
 // Hello is the handler for the pluggable-monitor HELLO command
+// revive:disable:unused-parameter
 func (d *SerialMonitor) Hello(userAgent string, protocol int) error {
 	return nil
 }
@@ -171,7 +173,10 @@ func (d *SerialMonitor) Close() error {
 	if !d.openedPort {
 		return errors.New("port already closed")
 	}
-	d.serialPort.Close()
+	err := d.serialPort.Close()
+	if err != nil {
+		return err
+	}
 	d.openedPort = false
 	return nil
 }
