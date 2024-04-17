@@ -70,7 +70,7 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     environment: production
-    needs: notarize-macos
+    needs: create-release-artifacts
     permissions:
       contents: write
       id-token: write # This is required for requesting the JWT
