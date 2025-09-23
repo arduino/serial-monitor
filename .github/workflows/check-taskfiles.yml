@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - ".github/workflows/check-taskfiles.ya?ml"
+      - ".npmrc"
       - "package.json"
       - "package-lock.json"
       - "**/Taskfile.ya?ml"
@@ -14,6 +15,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/check-taskfiles.ya?ml"
+      - ".npmrc"
       - "package.json"
       - "package-lock.json"
       - "**/Taskfile.ya?ml"
